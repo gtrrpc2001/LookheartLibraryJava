@@ -1,86 +1,100 @@
 package com.library.lookheartLibrary.fragment;
 
-import android.content.Context;
-import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.ProgressBar;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
 
-import androidx.annotation.RequiresApi;
 import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.Observer;
-import androidx.lifecycle.ViewModelProvider;
 
 import com.github.mikephil.charting.charts.LineChart;
 import com.github.mikephil.charting.data.Entry;
 import com.github.mikephil.charting.data.LineData;
 import com.github.mikephil.charting.data.LineDataSet;
+import com.google.gson.Gson;
+import com.google.gson.reflect.TypeToken;
 import com.library.lookheartLibrary.R;
-import com.library.lookheartLibrary.viewmodel.SharedViewModel;
+import com.library.lookheartLibrary.model.ArrDataModel;
+import com.library.lookheartLibrary.model.GetArrDataModel;
+import com.library.lookheartLibrary.model.GetArrListModel;
+import com.library.lookheartLibrary.server.RetrofitServerManager;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.sql.Time;
 import java.text.SimpleDateFormat;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Objects;
+
 import com.library.lookheartLibrary.controller.PeakController;
 
-@RequiresApi(api = Build.VERSION_CODES.O)
+import org.apache.commons.lang3.ArrayUtils;
+
 public class ArrFragment extends Fragment {
 
-    /*currentTime*/
+    /*constant*/
     //region
-    String currentYear;
-    String currentMonth;
-    String currentDay;
-    String currentDate;
-    String currentTime;
+    private static final int FIND_ARRAY_INDEX = 14;
+    private static final int ARR_DATA_SIZE = 500;
+    private static final int NUMBER_BUTTON_PRESS_COLOR = 0;
+    private static final int NUMBER_BUTTON_NORMAL_COLOR = 1;
+    private static final int TEXT_BUTTON_PRESS_COLOR = 2;
+    private static final int TEXT_BUTTON_NORMAL_COLOR = 3;
+    private static final Boolean ARR_FLAG = true;
+    private static final Boolean EMERGENCY_FLAG = false;
+    private static final int[] arrButtonColorList = {
+            R.drawable.arr_botton_press,
+            R.drawable.arr_button_normal,
+            R.drawable.bpm_border,
+            R.drawable.home_bottom_button
+    };
+    private static final int[] emergencyButtonColorList = {
+            R.drawable.emergency_press,
+            R.drawable.arr_button_normal,
+            R.drawable.emergency_border,
+            R.drawable.home_bottom_button
+    };
     //endregion
 
-    /*targetTime*/
+    /*constructor*/
     //region
-    String targetYear;
-    String targetMonth;
-    String targetDay;
-    String targetDate;
+    public ArrFragment(String email) {
+        retrofitServerManager = RetrofitServerManager.getInstance();
+        retrofitServerManager.setEmail(email);
+    }
+    //endregion
+
+    private final RetrofitServerManager retrofitServerManager;
+    private final Map<String, String> emergencyMap = new HashMap<>();    // writeTime : address
+    private Toast currentToast;
+
+    /*Date*/
+    //region
+    private String startDate;
+    private String endDate;
     //endregion
 
     /*SimpleDateFormat*/
     //region
-    SimpleDateFormat date = new SimpleDateFormat("yyyy-MM-dd");
-    SimpleDateFormat time = new SimpleDateFormat("HH:mm:ss");
-    SimpleDateFormat year = new SimpleDateFormat("yyyy");
-    SimpleDateFormat month = new SimpleDateFormat("MM");
-    SimpleDateFormat day = new SimpleDateFormat("dd");
+    SimpleDateFormat date;
     //endregion
 
-    /*DateTimeFormatter*/
-    //region
-    DateTimeFormatter yearFormat = DateTimeFormatter.ofPattern("yyyy");
-    DateTimeFormatter monthFormat = DateTimeFormatter.ofPattern("MM");
-    DateTimeFormatter dayFormat = DateTimeFormatter.ofPattern("dd");
-    //endregion
-
-    /*imagebutton*/
+    /*image button*/
     //region
     ImageButton yesterdayButton;
     ImageButton tomorrowButton;
@@ -97,343 +111,386 @@ public class ArrFragment extends Fragment {
 
     /*arrayList*/
     //region
-    ArrayList<Button> buttonList = new ArrayList<>();
-    ArrayList<Button> textList = new ArrayList<>();
-    ArrayList<String> arrList = new ArrayList<String>();
-    ArrayList<String> arrFileNameList = new ArrayList<String>();
-    //endregion
-
-    /*count*/
-    //region
-    int arrCnt;
-    int updateArrCnt;
+    ArrayList<Button> numberButtonList = new ArrayList<>();
+    ArrayList<Button> writeTimeButtonList = new ArrayList<>();
     //endregion
 
     /*LinearLayout*/
     //region
-    LinearLayout arrButton;
-    LinearLayout arrText;
+    LinearLayout arrNumberButtonsView;
+    LinearLayout arrWriteTimeButtonsView;
     //endregion
 
-    SharedViewModel viewModel;
     View view;
     LineChart arrChart;
     ScrollView scrollView;
-
-    Boolean startFlag = false;
-
-    private String email;
+    ProgressBar progressBar;
 
     @Override
-    public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                             Bundle savedInstanceState) {
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
         view = inflater.inflate(R.layout.fragment_arr, container, false);
-
-        SharedPreferences emailSharedPreferences = getActivity().getSharedPreferences("User", Context.MODE_PRIVATE);
-        email = emailSharedPreferences.getString("email", "null");
+        date = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
 
         setViewID();
 
-        currentTimeCheck();
-        targetDateCheck();
+        setChart();
+
+        setOnClickListener();
+
+        updateCurrentDate();
+
         todayArrList();
-
-        yesterdayButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                yesterdayButtonEvent();
-            }
-        });
-
-        tomorrowButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tomorrowButtonEvent();
-            }
-        });
-
-        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-
-        viewModel.removeAllArrList(); // 첫 시작 시 리스트가 있다면 제거
-        viewModel.getArrList().observe(getViewLifecycleOwner(), new Observer<ArrayList<String>>() {
-            @Override
-            public void onChanged(ArrayList<String> strings) {
-                arrList = strings;
-                updateArrCnt = arrList.size();
-
-                if (startFlag && updateArrCnt != 0){
-                    Log.e("arrList", arrList.toString());
-
-                    refreshTodayArrList();
-
-                    // 최하단 포커스
-                    scrollView.fullScroll(ScrollView.FOCUS_DOWN);
-                }
-
-                startFlag = true;
-            }
-        });
 
         return view;
     }
 
+    public void updateCurrentDate() {
+        // 시간 갱신 메서드
+        long mNow = System.currentTimeMillis();
+        Date mDate = new Date(mNow);
+
+        startDate = date.format(mDate);
+
+        dateCalculate(0, true);
+    }
+
     public void tomorrowButtonEvent() {
         dateCalculate(1, true);
-
         todayArrList();
     }
 
     public void yesterdayButtonEvent() {
         dateCalculate(1, false);
-
         todayArrList();
     }
 
     public void dateCalculate(int myDay, boolean check) {
 
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
-        LocalDate date = LocalDate.parse(targetDate, formatter);
+        LocalDate date = LocalDate.parse(startDate, formatter);
 
-        if(check){
-            // tomorrow
-            date = date.plusDays(myDay);
+        if (check)
+            date = date.plusDays(myDay);    // tomorrow
+        else
+            date = date.minusDays(myDay);   // yesterday
 
-        } else{
-            // yesterday
-            date = date.minusDays(myDay);
-        }
-        targetDate = date.format(formatter);
-        System.out.println(targetDate);
+        startDate = date.format(formatter);
 
-            /*
-            java.util.Date와 java.time.LocalDate는 Java의
-            서로 다른 날짜/시간 API를 나타내는 클래스로, 서로 호환되지 않음
-            */
+        date = LocalDate.parse(startDate, formatter);
+        date = date.plusDays(1);
 
-        date = LocalDate.parse(targetDate, formatter);
+        endDate = date.format(formatter);
+    }
 
-        targetYear = date.format(yearFormat);
-        targetMonth = date.format(monthFormat);
-        targetDay = date.format(dayFormat);
+    private void init() {
+        dateDisplay.setText(startDate);
+        arrChart.clear();
+
+        setTextViewVisible(false);
+
+        arrNumberButtonsView.removeAllViews();
+        arrWriteTimeButtonsView.removeAllViews();
+
+        numberButtonList = new ArrayList<>();
+        writeTimeButtonList = new ArrayList<>();
     }
 
     public void todayArrList() {
 
-        dateDisplay.setText(targetDate);
-        // 자식 뷰 제거
-        arrButton.removeAllViews();
-        arrText.removeAllViews();
-        // 최하단 포커스
-        scrollView.fullScroll(ScrollView.FOCUS_DOWN);
+        init();
+        cancelToast();
+        setLoadingBar(true);
 
-        // 경로
-        File directory = getFileDirectory("LOOKHEART/" + email + "/" + targetYear + "/" + targetMonth + "/" + targetDay + "/" + "arrEcgData");
+        retrofitServerManager.getArrList(startDate, endDate, new RetrofitServerManager.ServerTaskCallback() {
+            @Override
+            public void onSuccess(String result) {
+                if (!result.contains("result")) {
+                    Gson gson = new Gson();
+                    List<GetArrListModel> arrList = gson.fromJson(result, new TypeToken<List<GetArrListModel>>(){}.getType());
+                    setupArrButtonList(arrList);
 
-        if (directory.exists()){
-            int number = 1;
-            String fileName = null;
-
-            // 디렉토리 존재
-            File[] files = directory.listFiles();
-
-            for (int i = 0 ; files.length > i ; i++){
-
-                Button button = new Button(getActivity());
-                Button text = new Button(getActivity());
-
-                button.setText(""+number);
-                button.setId(number+1000);
-                text.setId(number);
-
-                try {
-                    String arrTime = searchArrDate(String.valueOf(number));
-                    fileName = targetYear + "-" + targetMonth + "-" + targetDay + " " + arrTime;
-
-                } catch (Exception e) {
-                    e.printStackTrace();
+                } else {
+                    // no data
+                    toast(getResources().getString(R.string.noArrData));
                 }
-
-                // LayoutParams 설정
-                LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                        LinearLayout.LayoutParams.MATCH_PARENT,    // 버튼의 너비
-                        LinearLayout.LayoutParams.WRAP_CONTENT      // 버튼의 높이
-                );
-
-                // 마진 설정
-                int margin_in_dp = 5; // 3dp
-                final float scale = getResources().getDisplayMetrics().density;
-                int margin_in_px = (int) (margin_in_dp * scale + 0.5f); // dp를 px로 변환
-
-                params.setMargins(margin_in_px, margin_in_px, margin_in_px, margin_in_px);
-
-                button.setLayoutParams(params);
-                text.setLayoutParams(params);
-
-
-                // 컬러 설정
-                setButton(button,text,fileName);
-
-                setButtonOnClickListener(button);
-
-                setButtonTextOnClickListener(text);
-
-                buttonList.add(button);
-                textList.add(text);
-                arrButton.addView(button);
-                arrText.addView(text);
-
-                number++;
-                if (!startFlag)
-                    arrCnt++;
+                setLoadingBar(false);
             }
 
-        }
-        else {
-            // 디렉토리 없음
+            @Override
+            public void onFailure(Exception e) {
+                // server Err
+                toast(getResources().getString(R.string.serverError));
+                setLoadingBar(false);
+            }
+        });
+    }
+
+    public void setupArrButtonList(List<GetArrListModel> arrList) {
+
+        int arrNumber = 1;
+
+        for (GetArrListModel arrTime : arrList) {
+            // Button
+            Button numberButton = new Button(getActivity());
+            Button writeTimeButton = new Button(getActivity());
+
+            // Button Layout Params
+            numberButton.setLayoutParams(setupButtonParams());
+            writeTimeButton.setLayoutParams(setupButtonParams());
+
+            if (arrTime.getAddress() == null) {
+                // Arr
+                // Button Properties
+                setButtonProperties(numberButton, writeTimeButton, String.valueOf(arrNumber), arrTime.getWritetime(), arrNumber);
+
+                // Button OnClickListener
+                setButtonOnClickListener(numberButton, writeTimeButton, ARR_FLAG);
+
+            } else {
+                // Emergency
+                // Button Properties
+                setButtonProperties(numberButton, writeTimeButton, "E", arrTime.getWritetime(), arrNumber);
+
+                // Button OnClickListener
+                setButtonOnClickListener(numberButton, writeTimeButton, EMERGENCY_FLAG);
+
+                emergencyMap.put(arrTime.getWritetime(), arrTime.getAddress());
+
+            }
+
+            numberButtonList.add(numberButton);
+            writeTimeButtonList.add(writeTimeButton);
+
+            arrNumberButtonsView.addView(numberButton);
+            arrWriteTimeButtonsView.addView(writeTimeButton);
+
+            arrNumber++;
         }
     }
 
-    public void refreshTodayArrList() {
+    private LinearLayout.LayoutParams setupButtonParams() {
+        // LayoutParams 설정
+        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,    // 버튼의 너비
+                LinearLayout.LayoutParams.WRAP_CONTENT     // 버튼의 높이
+        );
 
-        // 경로
-        File directory = getFileDirectory("LOOKHEART/" + email + "/" + currentYear + "/" + currentMonth + "/" + currentDay + "/" + "arrEcgData");
+        // 마진 설정
+        int margin_in_dp = 5;
+        final float scale = getResources().getDisplayMetrics().density;
+        int margin_in_px = (int) (margin_in_dp * scale + 0.5f); // dp를 px로 변환
 
-        if (directory.exists()){
-            int number = 1;
-            String fileName = null;
+        params.setMargins(margin_in_px, margin_in_px, margin_in_px, margin_in_px);
 
-            // 디렉토리 존재
-            File[] files = directory.listFiles();
+        return params;
+    }
 
-            // 파일 이름에서 마지막 숫자를 추출하여 정렬
-            Arrays.sort(files, new Comparator<File>() {
-                @Override
-                public int compare(File o1, File o2) {
-                    String name1 = o1.getName();
-                    String name2 = o2.getName();
-                    String[] split1 = name1.split("_");
-                    String[] split2 = name2.split("_");
+    private void setButtonProperties(Button numberButton, Button textButton, String numberText, String buttonText, int buttonID){
+        // 버튼 속성 설정
+        numberButton.setText(numberText);
+        numberButton.setTextColor(Color.WHITE);
+        numberButton.setTextSize(14);
+        numberButton.setTypeface(null, Typeface.BOLD);
+        numberButton.setBackground(ContextCompat.getDrawable(requireActivity(), R.drawable.arr_button_normal));
+        numberButton.setId(buttonID);
 
-                    int num1 = Integer.parseInt(split1[split1.length - 1].replace(".csv", ""));
-                    int num2 = Integer.parseInt(split2[split2.length - 1].replace(".csv", ""));
+        textButton.setText(buttonText);
+        textButton.setTextColor(Color.BLACK);
+        textButton.setTextSize(14);
+        textButton.setTypeface(null, Typeface.BOLD);
+        textButton.setBackground(ContextCompat.getDrawable(requireActivity(), R.drawable.home_bottom_button));
+        textButton.setId(buttonID);
+    }
 
-                    return Integer.compare(num1, num2);
-                }
-            });
-
-            Button button = new Button(getActivity());
-            Button text = new Button(getActivity());
-
-            button.setText(String.valueOf(arrCnt+1));
-
-            button.setId((arrCnt+1)+1000);
-            text.setId((arrCnt+1));
-
-            // fileName
-            fileName = targetDate + " " + arrList.get(0);
-
-            Log.e("fileName", fileName);
-            // LayoutParams 설정
-            LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
-                    LinearLayout.LayoutParams.MATCH_PARENT,    // 버튼의 너비
-                    LinearLayout.LayoutParams.WRAP_CONTENT      // 버튼의 높이
-            );
-
-
-            // 마진 설정
-            int margin_in_dp = 5; // 3dp
-            final float scale = getResources().getDisplayMetrics().density;
-            int margin_in_px = (int) (margin_in_dp * scale + 0.5f); // dp를 px로 변환
-
-            params.setMargins(margin_in_px, margin_in_px, margin_in_px, margin_in_px);
-
-            button.setLayoutParams(params);
-            text.setLayoutParams(params);
-
-            // 컬러 설정
-            setButton(button,text,fileName);
-
-            setButtonOnClickListener(button);
-
-            setButtonTextOnClickListener(text);
-
-            arrCnt++;
-
-            // 버튼 추가 시 기존 리스트 삭제
-            viewModel.removeArrList(0);
-
-            // 같은 시간인 경우만 버튼 추가
-            if (currentDate.equals(targetDate)) {
-                buttonList.add(button);
-                textList.add(text);
-                arrButton.addView(button);
-                arrText.addView(text);
-            }
-
+    private void setButtonColor(Button button, int[] colorList) {
+        for (Button otherButton : numberButtonList) {
+            if (otherButton.getId() == button.getId())
+                otherButton.setBackground(ContextCompat.getDrawable(requireActivity(), colorList[NUMBER_BUTTON_PRESS_COLOR]));
+            else
+                otherButton.setBackground(ContextCompat.getDrawable(requireActivity(), colorList[NUMBER_BUTTON_NORMAL_COLOR]));
         }
-        else {
-            // 디렉토리 없음
+        for (Button otherButton : writeTimeButtonList) {
+            if (otherButton.getId() == button.getId())
+                otherButton.setBackground(ContextCompat.getDrawable(requireActivity(), colorList[TEXT_BUTTON_PRESS_COLOR]));
+            else
+                otherButton.setBackground(ContextCompat.getDrawable(requireActivity(), colorList[TEXT_BUTTON_NORMAL_COLOR]));
         }
     }
 
-    public void searchArrChart(String buttonNumber) {
-        arrChart.clear();
-        statusText.setText("");
-        status.setText("");
-        arrStatusText.setText("");
-        arrStatus.setText("");
+    private void setButtonOnClickListener(Button numberButton, Button writeTimeButton, Boolean arrFlag) {
 
-        // 경로
-        File directory = getFileDirectory("LOOKHEART/" + email + "/" + targetYear + "/" + targetMonth + "/" + targetDay + "/" + "arrEcgData");
+        int[] colorList;
 
-        // 파일 경로와 이름
-        File file = new File(directory, "arrEcgData_" + buttonNumber + ".csv");
+        if (arrFlag)
+            colorList = arrButtonColorList; // ARR COLOR
+        else
+            colorList = emergencyButtonColorList;   // EMERGENCY COLOR
 
-        if (file.exists()) {
-            // 파일 있음
+        numberButton.setOnClickListener(v -> {
+            getArrData(writeTimeButton.getText().toString(), arrFlag);
+            setButtonColor(numberButton, colorList);
+        });
 
-            ArrayList<Double> arrArrayData = new ArrayList<>();
-            List<Entry> entries = new ArrayList<>();
+        writeTimeButton.setOnClickListener(v -> {
+            getArrData(writeTimeButton.getText().toString(), arrFlag);
+            setButtonColor(writeTimeButton, colorList);
+        });
+    }
 
-            try {
-                // file read
-                BufferedReader br = new BufferedReader(new FileReader(file));
-                String line = br.readLine();
-                String[] columns = line.split(",");
-                String status = columns[2];
-                String arrStatus = columns[3];
+    private void getArrData(String writeTime, Boolean arrFlag) {
 
-                setStatus(status, arrStatus);
+        setLoadingBar(true);
 
-                //peak mode setting
-                PeakController peakCtrl = new PeakController();
+        retrofitServerManager.getArrData(writeTime, new RetrofitServerManager.ServerTaskCallback() {
+            @Override
+            public void onSuccess(String result) {
 
-                for(int i = 60 ; 500 > i ; i++) {
-                    columns = line.split(","); // 데이터 구분
-                    Double ecg = Double.parseDouble(columns[i]);
+                setTextViewVisible(true);
 
-                    //peak mode 함수 설정하기
-                    double peak = peakCtrl.getPeackData(ecg.intValue());
-                    arrArrayData.add(peak);
-//                    arrArrayData.add(ecg);
-                }
+                Gson gson = new Gson();
+                List<GetArrDataModel> arrData = gson.fromJson(result, new TypeToken<List<GetArrDataModel>>(){}.getType());
 
-                // 그래프에 들어갈 데이터 저장
-                for (int i = 0; i < arrArrayData.size(); i++) {
-                    entries.add(new Entry((float)i, arrArrayData.get(i).floatValue()));
-                }
+                if (arrFlag)
+                    setupChartData(arrData);
+                else
+                    setupEmergencyChart(arrData, writeTime);
 
-                br.close();
-
-            }catch (IOException e) {
-                e.printStackTrace();
+                setLoadingBar(false);
             }
 
-            setSearchArrChartOption(entries);
+            @Override
+            public void onFailure(Exception e) {
+                // server Err
+                toast(getResources().getString(R.string.serverError));
+                setLoadingBar(false);
+            }
+        });
+    }
+
+    private void setupChartData(List<GetArrDataModel> arrDataList) {
+
+        ArrDataModel arrData = new ArrDataModel(arrDataList.get(0).getArr());
+        PeakController peakController = new PeakController();
+        List<Double> resultList = new ArrayList<>();
+        List<Entry> entries = new ArrayList<>();
+
+        setStatus(arrData.getBodyState(), arrData.getArrType());
+
+        if (peakController.getEcgToPeakDataFlag()) {
+            // PEAK MODE
+            List<Double[]> doubleEcgList = new ArrayList<>();
+            Double[] preEcgData = {};
+            Double[] resultEcgData;
+
+            // Ecg Data String to Double Array
+            for (GetArrDataModel arrEcgData : arrDataList)
+                doubleEcgList.add(arrEcgData.parseToSingleDoubleArray());
+
+            // Sum Ecg Data Array
+            for (Double[] data : doubleEcgList)
+                preEcgData = ArrayUtils.addAll(preEcgData, data);
+
+            int startIndex = findStartIndex(preEcgData, arrData.getEcgData());
+
+            // Ecg to Peak 초기값 최소 5개 필요
+            if (startIndex >= 5)
+                resultEcgData = arrData.setResultPeakData(Arrays.stream(preEcgData, 0, startIndex).toArray(Double[]::new));
+            else
+                resultEcgData = arrData.setResultPeakData(preEcgData);
+
+            // Double ECG -> Double PEAK
+            for (Double ecgData : resultEcgData)
+                resultList.add(peakController.getPeackData(ecgData.intValue()));
+
+            // Double PEAK -> Chart Entries
+            for (int i = resultList.size() - ARR_DATA_SIZE; i < resultList.size(); i++)
+                entries.add(new Entry((float)i, resultList.get(i).floatValue()));
+
+        } else {
+            // ECG MODE
+            resultList.addAll(Arrays.asList(arrData.getEcgData()));
+
+            for (Double ecgData : resultList)
+                entries.add(new Entry(0, ecgData.floatValue()));
         }
-        else {
-            // 파일 없음
+
+        setSearchArrChartOption(entries);
+    }
+
+    private void setupEmergencyChart(List<GetArrDataModel> arrDataList, String writeTime) {
+
+        setStatus(getResources().getString(R.string.emergency), Objects.requireNonNull(emergencyMap.get(writeTime)));
+
+        boolean nullCheck = arrDataList.get(0).getArr().length() == 0;
+        String setArrDataString = "null, null, null, null, ";
+
+        if (!nullCheck)
+            setArrDataString += arrDataList.get(0).getArr();
+        else
+            setArrDataString += "0.0";
+
+        ArrDataModel arrDataModel = new ArrDataModel(setArrDataString);
+        PeakController peakController = new PeakController();
+        List<Double> resultList = new ArrayList<>();
+        List<Entry> entries = new ArrayList<>();
+
+        if (peakController.getEcgToPeakDataFlag()) {
+            // PEAK MODE
+            if (!nullCheck) {
+                // Peak Data 초기값 설정을 위해 같은 배열을 합침 ( 500 + 500 )
+                Double[] arrData = ArrayUtils.addAll(arrDataModel.getEcgData(), arrDataModel.getEcgData());
+
+                for (Double ecgData : arrData)
+                    resultList.add(peakController.getPeackData(ecgData.intValue()));
+
+                for (int i = resultList.size() - ARR_DATA_SIZE; i < resultList.size(); i++)
+                    entries.add(new Entry((float)i, resultList.get(i).floatValue()));
+
+            } else {
+                // no Data
+                for (int i = 0; i < 500; i++)
+                    entries.add(new Entry((float)i, 0.0F));
+            }
+
+        } else {
+            // ECG MODE
+            if (!nullCheck) {
+
+                resultList.addAll(Arrays.asList(arrDataModel.getEcgData()));
+
+                for (Double ecgData : resultList)
+                    entries.add(new Entry(0, ecgData.floatValue()));
+            } else {
+                for (int i = 0; i < 500; i++)
+                    entries.add(new Entry((float)i, 500.0F));
+            }
+
         }
+
+        setSearchArrChartOption(entries);
+
+    }
+
+    private int findStartIndex(Double[] preEcgData, Double[] arrData) {
+
+        int arrIndex = 0;
+        Double[] subArrayToFind = Arrays.copyOf(arrData, FIND_ARRAY_INDEX);
+
+        for (int i = 0; i <= preEcgData.length - FIND_ARRAY_INDEX; i++) {
+
+            if (isSubArrayMatch(preEcgData[i], subArrayToFind[arrIndex])) {
+                if (++arrIndex == FIND_ARRAY_INDEX)
+                    return i - FIND_ARRAY_INDEX + 1;
+            } else {
+                arrIndex = 0;
+            }
+        }
+
+        return -1;  // not found
+    }
+
+    private boolean isSubArrayMatch(Double ecgArray, Double arrArray) {
+        return ecgArray.equals(arrArray);
     }
 
     void setSearchArrChartOption(List<Entry> entries){
@@ -444,8 +501,15 @@ public class ArrFragment extends Fragment {
 
         arrChart.setData(arrChartData);
         arrChart.getXAxis().setEnabled(false);
-        arrChart.setNoDataText("");
 
+        arrChart.getDescription().setEnabled(false); // 차트 설명
+        arrChart.getData().notifyDataChanged();
+        arrChart.notifyDataSetChanged();
+        arrChart.moveViewToX(0);
+    }
+
+    private void setChart() {
+        arrChart.getXAxis().setEnabled(false);
         arrChart.setNoDataText("");
         arrChart.getLegend().setEnabled(false); // 라벨 제거
         arrChart.getAxisLeft().setAxisMaximum(1024);
@@ -456,16 +520,6 @@ public class ArrFragment extends Fragment {
         arrChart.setPinchZoom(false);
         arrChart.setDoubleTapToZoomEnabled(false);
         arrChart.setHighlightPerTapEnabled(false);
-
-        if (arrChart.getDescription() != null) {
-            arrChart.getDescription().setEnabled(true);
-            arrChart.getDescription().setTextSize(20f); // Note: MPAndroidChart doesn't directly support setting font. Only text size and typeface can be set.
-        }
-
-        arrChart.getDescription().setEnabled(false); // 차트 설명
-        arrChart.getData().notifyDataChanged();
-        arrChart.notifyDataSetChanged();
-        arrChart.moveViewToX(0);
     }
 
     LineDataSet getArrChartDataSet(List<Entry> entries){
@@ -477,165 +531,52 @@ public class ArrFragment extends Fragment {
         return arrChartDataSet;
     }
 
-    void setButtonTextOnClickListener(Button text){
-        text.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for (Button otherButton : textList) {
-                    otherButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.home_bottom_button));
-                }
-                Button clickedButton = (Button) v;
-                clickedButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.bpm_border));
 
-                Button button = getActivity().findViewById(Integer.parseInt(String.valueOf(clickedButton.getId()))+ 1000);
-                for (Button otherButton : buttonList) {
-                    otherButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.arr_button_normal));
-                }
-
-                button.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.arr_botton_press));
-                String buttonText = button.getText().toString();
-                searchArrChart(buttonText);
-
-            }
-        });
-    }
-
-    void setButtonOnClickListener(Button button){
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                for (Button otherButton : buttonList) {
-                    otherButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.arr_button_normal));
-                }
-                Button clickedButton = (Button) v;
-                String buttonText = clickedButton.getText().toString();
-                searchArrChart(buttonText);
-                clickedButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.arr_botton_press));
-
-                Button textButton = getActivity().findViewById(Integer.parseInt((String) clickedButton.getText()));
-                for (Button otherButton : textList) {
-                    otherButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.home_bottom_button));
-                }
-                textButton.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.bpm_border));
-            }
-        });
-    }
-
-    void setButton(Button button,Button text,String fileName){
-        // 컬러 설정
-        button.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.arr_button_normal));
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(14);
-        button.setTypeface(null, Typeface.BOLD);
-
-        text.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.home_bottom_button));
-        text.setText(fileName);
-        text.setClickable(false);// 터치 비활성화
-    }
-
-    public void currentTimeCheck() {
-
-        Date mDate;
-        Time mTime;
-
-        // 시간 갱신 메서드
-        long mNow = System.currentTimeMillis();
-        mDate = new Date(mNow);
-        mTime = new Time(mNow);
-
-        currentYear = year.format(mDate);
-        currentMonth = month.format(mDate);
-        currentDay = day.format(mDate);
-
-        currentDate = date.format(mDate);
-        currentTime = time.format(mTime);
-
-    }
-
-    public void targetDateCheck() {
-
-        targetYear = currentYear;
-        targetMonth = currentMonth;
-        targetDay = currentDay;
-
-        targetDate = currentDate;
-    }
-
-    public void setStatus(String myStatus, String myArrStatus){
-
+    public void setStatus(String myStatus, String myType){
         statusText.setText(getResources().getString(R.string.arrState));
         arrStatusText.setText(getResources().getString(R.string.arrType));
 
-        switch (myStatus){
+        status.setText(setStatus(myStatus));
+        arrStatus.setText(setType(myType.replace("\n", "")));
+    }
+
+    private String setStatus(String status) {
+        switch (status){
             case "R":
-                status.setText(getResources().getString(R.string.rest));
-                break;
+                return getResources().getString(R.string.rest);
             case "E":
-                status.setText(getResources().getString(R.string.exercise));
-                break;
+                return getResources().getString(R.string.exercise);
             case "S":
-                status.setText(getResources().getString(R.string.sleep));
-                break;
+                return getResources().getString(R.string.sleep);
             default:
-                status.setText(getResources().getString(R.string.rest));
-                break;
+                setEmergencyText();
+                return "";
         }
+    }
 
-        switch (myArrStatus){
+    private String setType(String type) {
+        switch (type){
             case "arr":
-                arrStatus.setText(getResources().getString(R.string.typeArr));
-                break;
+                return getResources().getString(R.string.typeArr);
             case "fast":
-                arrStatus.setText(getResources().getString(R.string.typeFastArr));
-                break;
+                return getResources().getString(R.string.typeFastArr);
             case "slow":
-                arrStatus.setText(getResources().getString(R.string.typeSlowArr));
-                break;
+                return getResources().getString(R.string.typeSlowArr);
             case "irregular":
-                arrStatus.setText(getResources().getString(R.string.typeHeavyArr));
-                break;
+                return getResources().getString(R.string.typeHeavyArr);
             default:
-                arrStatus.setText(getResources().getString(R.string.typeArr));
-                break;
+                return type;    // EMERGENCY ADDRESS
         }
     }
 
-    public String searchArrDate(String arrNumber){
-        String arrDate = null;
-
-        // 경로
-        File directory = getFileDirectory("LOOKHEART/" + email + "/" + targetYear + "/" + targetMonth + "/" + targetDay + "/" + "arrEcgData");
-
-        // 파일 경로와 이름
-        File file = new File(directory, "arrEcgData_" + arrNumber + ".csv");
-
-        if (file.exists()) {
-            // 파일 있음
-            try {
-                // file read
-                BufferedReader br = new BufferedReader(new FileReader(file));
-                String line = br.readLine();
-                String[] columns = line.split(",");
-                arrDate = columns[0];
-                br.close();
-            }catch (IOException e) {
-                e.printStackTrace();
-            }
-        }
-        else {
-            // 파일 없음
-        }
-        return arrDate;
+    private void setEmergencyText() {
+        statusText.setText("");
+        arrStatusText.setText(getResources().getString(R.string.emergencyType));
     }
 
-    File getFileDirectory(String name){
-        String directoryName = name;
-        return new File(getActivity().getFilesDir(), directoryName);
-    }
-
-    void setViewID(){
-        arrButton = view.findViewById(R.id.arrButton);
-        arrText = view.findViewById(R.id.arrText);
+    void setViewID() {
+        arrNumberButtonsView = view.findViewById(R.id.arrButton);
+        arrWriteTimeButtonsView = view.findViewById(R.id.arrText);
 
         statusText = view.findViewById(R.id.status);
         status = view.findViewById(R.id.statusValue);
@@ -648,6 +589,52 @@ public class ArrFragment extends Fragment {
         tomorrowButton = view.findViewById(R.id.tomorrowButton);
         dateDisplay = view.findViewById(R.id.dateDisplay);
         scrollView = view.findViewById(R.id.scrollView);
+
+        progressBar = view.findViewById(R.id.progressBar);
+    }
+
+    void setOnClickListener() {
+        yesterdayButton.setOnClickListener(view -> yesterdayButtonEvent());
+
+        tomorrowButton.setOnClickListener(view -> tomorrowButtonEvent());
+    }
+
+    private void setTextViewVisible(boolean flag) {
+        int visible;
+
+        if (flag)
+            visible = View.VISIBLE;
+        else
+            visible = View.GONE;
+
+        statusText.setVisibility(visible);
+        status.setVisibility(visible);
+
+        arrStatusText.setVisibility(visible);
+        arrStatus.setVisibility(visible);
+
+    }
+
+    private void setLoadingBar(boolean flag) {
+        if (flag)
+            progressBar.setVisibility(View.VISIBLE);
+        else
+            progressBar.setVisibility(View.GONE);
+    }
+
+    private void toast(String text) {
+        if (getActivity() != null) {
+            if (currentToast != null)
+                currentToast.cancel();
+
+            currentToast = Toast.makeText(getActivity(), text, Toast.LENGTH_SHORT);
+            currentToast.show();
+        }
+    }
+
+    private void cancelToast() {
+        if (currentToast != null)
+            currentToast.cancel();
     }
 
 }
