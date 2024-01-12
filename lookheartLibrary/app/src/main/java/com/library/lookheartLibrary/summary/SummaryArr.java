@@ -163,77 +163,16 @@ public class SummaryArr extends Fragment {
 
         todayArrChartGraph();
 
-        dayButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
+        setButtonOnClickListener();
 
-                setColor(dayButton);
-                todayArrChartGraph();
-
-                dayCheck = true;
-                weekCheck = false;
-                monthCheck = false;
-                yearCheck = false;
-            }
-        });
-
-        weekButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                setColor(weekButton);
-                weekArrChartGraph();
-
-                dayCheck = false;
-                weekCheck = true;
-                monthCheck = false;
-                yearCheck = false;
-            }
-        });
-
-        monthButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                setColor(monthButton);
-                monthArrChartGraph();
-
-                dayCheck = false;
-                weekCheck = false;
-                monthCheck = true;
-                yearCheck = false;
-            }
-        });
-
-        yearButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-
-                setColor(yearButton);
-                yearArrChartGraph();
-
-                dayCheck = false;
-                weekCheck = false;
-                monthCheck = false;
-                yearCheck = true;
-            }
-        });
-
-        tomorrowButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                tomorrowButtonEvent();
-            }
-        });
-
-        yesterdayButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-                yesterdayButtonEvent();
-            }
-        });
         return view;
 
+    }
+
+    public void updateChart() {
+        currentTimeCheck();
+
+        todayArrChartGraph();
     }
 
     public void tomorrowButtonEvent() {
@@ -825,6 +764,85 @@ public class SummaryArr extends Fragment {
                 otherButton.setTextColor(ContextCompat.getColor(getActivity(), R.color.lightGray));
             }
         }
+    }
+
+    private void setButtonOnClickListener() {
+
+        // DAY
+        dayButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                setColor(dayButton);
+                todayArrChartGraph();
+
+                dayCheck = true;
+                weekCheck = false;
+                monthCheck = false;
+                yearCheck = false;
+            }
+        });
+
+        // WEEK
+        weekButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                setColor(weekButton);
+                weekArrChartGraph();
+
+                dayCheck = false;
+                weekCheck = true;
+                monthCheck = false;
+                yearCheck = false;
+            }
+        });
+
+        // MONTH
+        monthButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                setColor(monthButton);
+                monthArrChartGraph();
+
+                dayCheck = false;
+                weekCheck = false;
+                monthCheck = true;
+                yearCheck = false;
+            }
+        });
+
+        // YEAR
+        yearButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+
+                setColor(yearButton);
+                yearArrChartGraph();
+
+                dayCheck = false;
+                weekCheck = false;
+                monthCheck = false;
+                yearCheck = true;
+            }
+        });
+
+        // TOMORROW
+        tomorrowButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                tomorrowButtonEvent();
+            }
+        });
+
+        // YESTERDAY
+        yesterdayButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                yesterdayButtonEvent();
+            }
+        });
     }
 
     public void currentTimeCheck() {

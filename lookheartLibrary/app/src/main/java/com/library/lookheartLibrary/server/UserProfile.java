@@ -56,7 +56,7 @@ public class UserProfile {
     private String dailyCalorie;
 
     @SerializedName("alarm_sms")
-    private String smsNotification;
+    private String ecgFlag;
 
     @SerializedName("differtime")
     private String timeDifference;
@@ -122,12 +122,73 @@ public class UserProfile {
         return dailyDistance;
     }
     public String getDailyCalorie(){
-        return dailyActivityCalorie;
+        return dailyCalorie;
     }
     public String getDailyActivityCalorie(){
-        return dailyCalorie;
+        return dailyActivityCalorie;
     }
     public String getGuardian(){
         return guardian;
     }
+
+    public String getEcgFlag() {
+        return ecgFlag;
+    }
+
+    // setter
+    public void setId(String value) {
+        id = value;
+    }
+    public void setName(String value) {
+        name = value;
+    }
+    public void setEmail(String value) {
+        email = value;
+    }
+    public void setPhone(String value){
+        phone = value;
+    }
+    public void setGender(String value){
+        gender = value;
+    }
+    public void setHeight(String value){
+        height = value;
+    }
+    public void setWeight(String value){
+        weight = value;
+    }
+    public void setAge(String value){
+        age = value;
+    }
+    public void setBirthday(String value){
+        birthday = value;
+    }
+    public void setJoinDate(String value){
+        joinDate = value;
+    }
+    public void setSleepStart(String value){
+        sleepStart = value;
+    }
+    public void setSleepEnd(String value){
+        sleepEnd = value;
+    }
+    public void setActivityBPM(String value){
+        activityBPM = value;
+    }
+    public void setDailyStep(String value){
+        dailyStep = value;
+    }
+    public void setDailyDistance(String value){
+        dailyDistance = value;
+    }
+    public void setDailyCalorie(String value){
+        dailyCalorie = value;
+    }
+    public void setDailyActivityCalorie(String value){
+        dailyActivityCalorie = value;
+    }
+    public void setGuardian(String value){
+        guardian = value;
+    }
 }
+

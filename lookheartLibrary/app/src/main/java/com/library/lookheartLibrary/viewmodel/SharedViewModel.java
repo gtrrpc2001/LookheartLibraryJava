@@ -17,7 +17,6 @@ public class SharedViewModel extends ViewModel {
     private final MutableLiveData<String> wakeup = new MutableLiveData<>();
 
 
-
     private final MutableLiveData<String> bpm = new MutableLiveData<>();
     private final MutableLiveData<String> tCal = new MutableLiveData<>();
     private final MutableLiveData<String> eCal = new MutableLiveData<>();
@@ -33,7 +32,8 @@ public class SharedViewModel extends ViewModel {
     private final MutableLiveData<Boolean> fastarr = new MutableLiveData<>();
     private final MutableLiveData<Boolean> slowarr = new MutableLiveData<>();
     private final MutableLiveData<Boolean> irregular = new MutableLiveData<>();
-
+    private final MutableLiveData<Boolean> hourlyArr = new MutableLiveData<>();
+    private final MutableLiveData<Boolean> totalArr = new MutableLiveData<>();
 
     private final MutableLiveData<Boolean> summaryRefreshCheck = new MutableLiveData<>();
     private final MutableLiveData<Boolean> arrRefreshCheck = new MutableLiveData<>();
@@ -110,7 +110,12 @@ public class SharedViewModel extends ViewModel {
     public void setIrregular(Boolean check) {
         irregular.setValue(check);
     }
-
+    public void setHourlyArr(Boolean check) {
+        hourlyArr.setValue(check);
+    }
+    public void setTotalArr(Boolean check) {
+        totalArr.setValue(check);
+    }
 
     public void addArrList(String arrDate) {
         ArrayList<String> currentList = arrList.getValue();
@@ -194,6 +199,12 @@ public class SharedViewModel extends ViewModel {
     }
     public LiveData<Boolean> getIrregular() {
         return irregular;
+    }
+    public LiveData<Boolean> getHourlyArr() {
+        return hourlyArr;
+    }
+    public LiveData<Boolean> getTotalArr() {
+        return totalArr;
     }
 
     public MutableLiveData<ArrayList<String>> getArrList() {

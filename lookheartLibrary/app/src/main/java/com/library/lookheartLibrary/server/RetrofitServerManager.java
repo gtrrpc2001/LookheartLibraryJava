@@ -25,6 +25,7 @@ public class RetrofitServerManager {
     private String email;
     private static final String BASE_URL = "http://121.152.22.85:40080/"; // Real Address
 //    private static final String BASE_URL = "http://121.152.22.85:40081/"; // TEST Address
+
     private static RetrofitServerManager instance;
     private static RetrofitService apiService;
 
@@ -60,6 +61,11 @@ public class RetrofitServerManager {
 
     public interface ServerTaskCallback {
         void onSuccess(String result);
+        void onFailure(Exception e);
+    }
+
+    public interface UserDataCallback {
+        void userData(UserProfile userProfile);
         void onFailure(Exception e);
     }
 
@@ -412,7 +418,8 @@ public class RetrofitServerManager {
 //            callback.onFailure(e);
 //        }
 //    }
-
+//
+//
 //    public void getProfileFromAPI(Map<String, Object> mapParam, UserDataCallback callback) {
 //
 //        initializeApiService();
@@ -423,8 +430,19 @@ public class RetrofitServerManager {
 //            @Override
 //            public void onSuccess(List<UserProfile> result) {
 //                try {
+//                    ArrayList<String> guardianPhoneNumber = new ArrayList<>();
+//
+//                    for (UserProfile userProfile : result)
+//                        guardianPhoneNumber.add(userProfile.getGuardian());
+//
+//                    // ArrayList -> Array
+//                    String[] phoneNumberArray = new String[guardianPhoneNumber.size()];
+//                    guardianPhoneNumber.toArray(phoneNumberArray);
+//
 //                    if (!result.isEmpty()) {
+//
 //                        UserProfileManager.getInstance().setUserProfile(result.get(0));
+//                        UserProfileManager.getInstance().setGuardianNumbers(phoneNumberArray);
 //                        callback.userData(UserProfileManager.getInstance().getUserProfile());  // 콜백 호출
 //                    }
 //                }catch (Exception ignored) {

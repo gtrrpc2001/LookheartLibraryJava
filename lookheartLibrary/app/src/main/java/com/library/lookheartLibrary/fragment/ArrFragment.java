@@ -42,6 +42,7 @@ import java.util.Map;
 import java.util.Objects;
 
 import com.library.lookheartLibrary.controller.PeakController;
+import com.library.lookheartLibrary.server.RetrofitService;
 
 import org.apache.commons.lang3.ArrayUtils;
 
@@ -144,6 +145,12 @@ public class ArrFragment extends Fragment {
         return view;
     }
 
+    public void updateArrList() {
+        System.out.println("update");
+        updateCurrentDate();
+        todayArrList();
+    }
+
     public void updateCurrentDate() {
         // 시간 갱신 메서드
         long mNow = System.currentTimeMillis();
@@ -228,6 +235,7 @@ public class ArrFragment extends Fragment {
     public void setupArrButtonList(List<GetArrListModel> arrList) {
 
         int arrNumber = 1;
+        int emergencyNumber = 1;
 
         for (GetArrListModel arrTime : arrList) {
             // Button
@@ -246,16 +254,19 @@ public class ArrFragment extends Fragment {
                 // Button OnClickListener
                 setButtonOnClickListener(numberButton, writeTimeButton, ARR_FLAG);
 
+                arrNumber++;
+
             } else {
                 // Emergency
                 // Button Properties
-                setButtonProperties(numberButton, writeTimeButton, "E", arrTime.getWritetime(), arrNumber);
+                setButtonProperties(numberButton, writeTimeButton, "E", arrTime.getWritetime(), emergencyNumber);
 
                 // Button OnClickListener
                 setButtonOnClickListener(numberButton, writeTimeButton, EMERGENCY_FLAG);
 
                 emergencyMap.put(arrTime.getWritetime(), arrTime.getAddress());
 
+                emergencyNumber++;
             }
 
             numberButtonList.add(numberButton);
@@ -263,8 +274,6 @@ public class ArrFragment extends Fragment {
 
             arrNumberButtonsView.addView(numberButton);
             arrWriteTimeButtonsView.addView(writeTimeButton);
-
-            arrNumber++;
         }
     }
 
@@ -400,7 +409,7 @@ public class ArrFragment extends Fragment {
 
             // Double ECG -> Double PEAK
             for (Double ecgData : resultEcgData)
-                resultList.add(peakController.getPeackData(ecgData.intValue()));
+                resultList.add(peakController.changeEcgData(ecgData));
 
             // Double PEAK -> Chart Entries
             for (int i = resultList.size() - ARR_DATA_SIZE; i < resultList.size(); i++)
@@ -410,8 +419,10 @@ public class ArrFragment extends Fragment {
             // ECG MODE
             resultList.addAll(Arrays.asList(arrData.getEcgData()));
 
+            int x = 0;
             for (Double ecgData : resultList)
-                entries.add(new Entry(0, ecgData.floatValue()));
+                entries.add(new Entry(x++, ecgData.floatValue()));
+
         }
 
         setSearchArrChartOption(entries);
@@ -441,7 +452,7 @@ public class ArrFragment extends Fragment {
                 Double[] arrData = ArrayUtils.addAll(arrDataModel.getEcgData(), arrDataModel.getEcgData());
 
                 for (Double ecgData : arrData)
-                    resultList.add(peakController.getPeackData(ecgData.intValue()));
+                    resultList.add(peakController.changeEcgData(ecgData));
 
                 for (int i = resultList.size() - ARR_DATA_SIZE; i < resultList.size(); i++)
                     entries.add(new Entry((float)i, resultList.get(i).floatValue()));

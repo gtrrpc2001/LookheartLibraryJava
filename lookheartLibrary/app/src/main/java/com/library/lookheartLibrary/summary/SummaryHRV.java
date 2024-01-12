@@ -233,6 +233,12 @@ public class SummaryHRV extends Fragment {
         return view;
     }
 
+    public void updateChart() {
+        currentTimeCheck();
+
+        todayHrvChartGraph();
+    }
+
     public void setColor(Button button) {
         // 클릭 버튼 색상 변경
         button.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.summary_button_press));
@@ -353,7 +359,7 @@ public class SummaryHRV extends Fragment {
 
             LineData hrvChartData = new LineData(dataSet);
 
-            LineChartController.setChartOption(hrvChart,hrvChartData,hrvTimeData);
+            LineChartController.setHRVChartOption(hrvChart,hrvChartData,hrvTimeData);
 
             // 줌 인 상태에서 다른 그래프 봤을 경우 대비 줌 아웃
             LineChartController.setZoom(hrvChart);
@@ -473,7 +479,7 @@ public class SummaryHRV extends Fragment {
 
             LineData twoDaysHrvChartData = new LineData(twoDaysHrvChartdataSets);
 
-            LineChartController.setChartOption(hrvChart,twoDaysHrvChartData,totalAXis);
+            LineChartController.setHRVChartOption(hrvChart,twoDaysHrvChartData,totalAXis);
 
             // 줌 인 상태에서 다른 그래프 봤을 경우 대비 줌 아웃
             LineChartController.setZoom(hrvChart);
@@ -626,7 +632,7 @@ public class SummaryHRV extends Fragment {
 
             LineData HrvChartData = new LineData(threeDaysHrvChartdataSets);
 
-            LineChartController.setChartOption(hrvChart,HrvChartData,totalAXis);
+            LineChartController.setHRVChartOption(hrvChart,HrvChartData,totalAXis);
 
             // 줌 인 상태에서 다른 그래프 봤을 경우 대비 줌 아웃
             LineChartController.setZoom(hrvChart);

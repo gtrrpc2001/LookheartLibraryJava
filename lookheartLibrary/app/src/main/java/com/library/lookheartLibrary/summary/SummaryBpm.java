@@ -230,6 +230,12 @@ public class SummaryBpm extends Fragment {
         return view;
     }
 
+    public void updateChart() {
+        currentTimeCheck();
+
+        todayBpmChartGraph();
+    }
+
     public void setColor(Button button) {
         // 클릭 버튼 색상 변경
         button.setBackground(ContextCompat.getDrawable(getActivity(), R.drawable.summary_button_press));

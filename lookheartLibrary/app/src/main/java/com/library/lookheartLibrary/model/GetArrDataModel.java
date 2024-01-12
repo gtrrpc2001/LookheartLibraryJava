@@ -63,7 +63,8 @@ public class GetArrDataModel {
                 mergedArray[currentPosition++] = Double.parseDouble(part);
             }
         }
-
+        System.out.println(Arrays.toString(mergedArray));
+        System.out.println(mergedArray.length);
         return mergedArray;
     }
 }

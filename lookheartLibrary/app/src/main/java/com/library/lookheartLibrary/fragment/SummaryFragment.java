@@ -26,12 +26,21 @@ import com.library.lookheartLibrary.summary.SummaryCal;
 import com.library.lookheartLibrary.summary.SummaryHRV;
 import com.library.lookheartLibrary.summary.SummaryStep;
 
+import java.util.ArrayList;
+
 public class SummaryFragment extends Fragment {
     SharedViewModel viewModel;
 
-    private Fragment bpm, arr, hrv, cal, step;
+//    private Fragment bpm, arr, hrv, cal, step;
     FragmentManager fragmentManager;
 
+    private SummaryBpm bpm;
+    private SummaryArr arr;
+    private SummaryHRV hrv;
+    private SummaryCal cal;
+    private SummaryStep step;
+
+    private ArrayList<Fragment> arrayList = new ArrayList<>();
     private LinearLayout bpmButton, arrButton, hrvButton, calButton, stepButton;
     private TextView bpmText, arrText, hrvText, calText, stepText;
     private ImageView bpmImg, arrImg, hrvImg, calImg, stepImg;
@@ -82,7 +91,7 @@ public class SummaryFragment extends Fragment {
         fragmentTransaction.addToBackStack(null);
         fragmentTransaction.commit();
 
-        refresh();
+//        refresh();
 
         bpmButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -92,6 +101,9 @@ public class SummaryFragment extends Fragment {
                 if(bpm == null) {
                     bpm = new SummaryBpm();
                     fragmentManager.beginTransaction().add(R.id.summaryFrame, bpm).commit();
+                    arrayList.add(bpm);
+                } else {
+                    bpm.updateChart();
                 }
 
                 if(bpm != null) fragmentManager.beginTransaction().show(bpm).commit();
@@ -111,6 +123,9 @@ public class SummaryFragment extends Fragment {
                 if(arr == null) {
                     arr = new SummaryArr();
                     fragmentManager.beginTransaction().add(R.id.summaryFrame, arr).commit();
+                    arrayList.add(arr);
+                } else {
+                    arr.updateChart();
                 }
 
                 if(bpm != null) fragmentManager.beginTransaction().hide(bpm).commit();
@@ -129,6 +144,9 @@ public class SummaryFragment extends Fragment {
                 if(hrv == null) {
                     hrv = new SummaryHRV();
                     fragmentManager.beginTransaction().add(R.id.summaryFrame, hrv).commit();
+                    arrayList.add(hrv);
+                } else {
+                    hrv.updateChart();
                 }
 
                 if(bpm != null) fragmentManager.beginTransaction().hide(bpm).commit();
@@ -147,6 +165,9 @@ public class SummaryFragment extends Fragment {
                 if(cal == null) {
                     cal = new SummaryCal();
                     fragmentManager.beginTransaction().add(R.id.summaryFrame, cal).commit();
+                    arrayList.add(cal);
+                } else {
+                    cal.updateChart();
                 }
 
                 if(bpm != null) fragmentManager.beginTransaction().hide(bpm).commit();
@@ -165,6 +186,9 @@ public class SummaryFragment extends Fragment {
                 if(step == null) {
                     step = new SummaryStep();
                     fragmentManager.beginTransaction().add(R.id.summaryFrame, step).commit();
+                    arrayList.add(step);
+                } else {
+                    step.updateChart();
                 }
 
                 if(bpm != null) fragmentManager.beginTransaction().hide(bpm).commit();
@@ -178,54 +202,21 @@ public class SummaryFragment extends Fragment {
         return view;
     }
 
-    public void refresh(){
-        viewModel = new ViewModelProvider(requireActivity()).get(SharedViewModel.class);
-        viewModel.getSummaryRefreshCheck().observe(getViewLifecycleOwner(), new Observer<Boolean>() {
-            @Override
-            public void onChanged(Boolean check) {
-
-                if (arr != null && check){
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(arr);
-                    arr = new SummaryArr();
-                    fragmentTransaction.add(R.id.summaryFrame, arr, "newFragmentTag");
-                    fragmentTransaction.commit();
-                }
-                if (hrv != null && check){
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(hrv);
-                    hrv = new SummaryHRV();
-                    fragmentTransaction.add(R.id.summaryFrame, hrv, "newFragmentTag");
-                    fragmentTransaction.commit();
-                }
-                if (cal != null && check){
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(cal);
-                    cal = new SummaryCal();
-                    fragmentTransaction.add(R.id.summaryFrame, cal, "newFragmentTag");
-                    fragmentTransaction.commit();
-                }
-                if (step != null && check){
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(step);
-                    step = new SummaryStep();
-                    fragmentTransaction.add(R.id.summaryFrame, step, "newFragmentTag");
-                    fragmentTransaction.commit();
-                }
-
-                if (bpm != null && check){
-                    FragmentTransaction fragmentTransaction = fragmentManager.beginTransaction();
-                    fragmentTransaction.remove(bpm);
-                    bpm = new SummaryBpm();
-                    fragmentTransaction.add(R.id.summaryFrame, bpm, "newFragmentTag");
-                    fragmentTransaction.commit();
-                }
-
-                setColor(bpmButton, bpmText, bpmImg);
-
-            }
-        });
+    @Override
+    public void onResume() {
+        super.onResume();
+        if (bpm != null)
+            bpm.updateChart();
+        if (arr != null)
+            arr.updateChart();
+        if (hrv != null)
+            hrv.updateChart();
+        if (cal != null)
+            cal.updateChart();
+        if (step != null)
+            step.updateChart();
     }
+
     public void setColor(LinearLayout layout, TextView textView, ImageView imageView){
         BackgroundColor(layout);
         TextColor(textView);

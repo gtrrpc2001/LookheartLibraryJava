@@ -28,6 +28,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.library.lookheartLibrary.R;
+import com.library.lookheartLibrary.server.UserProfileManager;
 import com.library.lookheartLibrary.viewmodel.SharedViewModel;
 
 import java.io.BufferedReader;
@@ -297,6 +298,16 @@ public class SummaryCal extends Fragment {
         viewModel.getECalText().observe(getViewLifecycleOwner(), tvTargetECal::setText);
 
         return view;
+
+    }
+
+    public void updateChart() {
+
+        setTargetCal();
+
+        currentTimeCheck();
+
+        todayCalChartGraph();
 
     }
 
@@ -1124,8 +1135,13 @@ public class SummaryCal extends Fragment {
         // o_ecal 일일 목표 소비 활동 칼로리
         SharedPreferences sharedPref = getActivity().getSharedPreferences(email, Context.MODE_PRIVATE);
 
-        targetTCal = Integer.parseInt(sharedPref.getString("o_cal", "3000")); // 총 칼로리
-        targetECal = Integer.parseInt(sharedPref.getString("o_ecal", "500")); // 활동 칼로리
+        String targetTotalCalorie = UserProfileManager.getInstance().getUserProfile().getDailyCalorie();
+        String targetActivityCalorie = UserProfileManager.getInstance().getUserProfile().getDailyActivityCalorie();
+
+        if (!targetTotalCalorie.isEmpty())
+            targetTCal = Integer.parseInt(targetTotalCalorie); // 총 칼로리
+        if (!targetActivityCalorie.isEmpty())
+            targetECal = Integer.parseInt(targetActivityCalorie); // 활동 칼로리
 
         weektargetTCal = targetTCal * 7;
         weektargetECal = targetECal * 7;

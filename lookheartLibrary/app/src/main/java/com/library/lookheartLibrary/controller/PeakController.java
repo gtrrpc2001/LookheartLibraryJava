@@ -2,7 +2,7 @@ package com.library.lookheartLibrary.controller;
 
 public class PeakController {
 
-    private Boolean ecgToPeakData = true;
+    private Boolean ecgToPeakData = true;   // true : peak, false : ecg
 
     private float[] xx_ecg_outdata = new float[5];
     private float xx_msl_mm = 0;
@@ -19,6 +19,8 @@ public class PeakController {
     private float[] xx_itx = new float[15];
     private float[] xx_ecgarray = new float[15];
 
+    private double[] changeEcgArray = new double[2];
+
     public PeakController(float[] xx_ecg_outdata,float[] xx_ecgarray,float[] xx_itx,float[] xx_m_min,float[] xx_itx_1,float[] xx_s_max){
         this.xx_ecg_outdata = xx_ecg_outdata;
         this.xx_ecgarray = xx_ecgarray;
@@ -29,7 +31,34 @@ public class PeakController {
     }
 
     public PeakController(){
+        changeEcgArray[0] = 512.0;
+        changeEcgArray[1] = 512.0;
+    }
 
+    public Boolean getEcgToPeakDataFlag() {
+        return ecgToPeakData;
+    }
+
+    public void setEcgToPeakDataFlag(Boolean value) {
+        ecgToPeakData = value;
+    }
+
+    public double changeEcgData(Double ecg) {
+        changeEcgArray[1] = changeEcgArray[0];
+        changeEcgArray[0] = ecg;
+
+        double calcEcg = changeEcgArray[1] - changeEcgArray[0];
+
+        if (Math.abs(calcEcg) <= 50 )
+            calcEcg = 0;
+
+        if (changeEcgArray[1] == changeEcgArray[0]) {
+            calcEcg = changeEcgArray[0] <= 10 ? 3 :
+                    changeEcgArray[0] >= 1000 ? 1000 : calcEcg + 512;
+        } else
+            calcEcg = calcEcg + 512;
+
+        return calcEcg;
     }
 
     public double getPeackData(int ecg){
@@ -144,7 +173,5 @@ public class PeakController {
         return (long) sumit1;
     }
 
-    public Boolean getEcgToPeakDataFlag() {
-        return ecgToPeakData;
-    }
+
 }

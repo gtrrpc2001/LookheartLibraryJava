@@ -31,6 +31,7 @@ import com.github.mikephil.charting.data.BarEntry;
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter;
 import com.github.mikephil.charting.formatter.ValueFormatter;
 import com.library.lookheartLibrary.R;
+import com.library.lookheartLibrary.server.UserProfileManager;
 import com.library.lookheartLibrary.viewmodel.SharedViewModel;
 
 import java.io.BufferedReader;
@@ -318,6 +319,14 @@ public class SummaryStep extends Fragment {
 
         return view;
 
+    }
+
+    public void updateChart() {
+        setTargetStep();
+
+        currentTimeCheck();
+
+        todayStepChartGraph();
     }
 
     public void tomorrowButtonEvent() {
@@ -1133,8 +1142,8 @@ public class SummaryStep extends Fragment {
         // o_ecal 일일 목표 소비 활동 칼로리
         SharedPreferences sharedPref = getActivity().getSharedPreferences(email, Context.MODE_PRIVATE);
 
-        targetStep = Integer.parseInt(sharedPref.getString("o_step", "2000"));
-        targetDistance = Integer.parseInt(sharedPref.getString("o_distance", "5"));
+        targetStep = Integer.parseInt(UserProfileManager.getInstance().getUserProfile().getDailyStep());
+        targetDistance = Integer.parseInt(UserProfileManager.getInstance().getUserProfile().getDailyDistance());
 
         targetDistanceKm = targetDistance * 1000;
 

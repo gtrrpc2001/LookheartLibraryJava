@@ -5,6 +5,7 @@ public class UserProfileManager {
     private static UserProfileManager instance;
 
     private UserProfile userProfile;
+    private String[] guardianNumbers;
 
     public static UserProfileManager getInstance() {
         if (instance == null) {
@@ -20,4 +21,15 @@ public class UserProfileManager {
     public void setUserProfile(UserProfile myUserProfile) {
         userProfile = myUserProfile;
     }
+
+    public String[] getGuardianNumbers() {
+        return guardianNumbers;
+    }
+
+
+    public void setGuardianNumbers(String[] numbers) {
+        guardianNumbers = numbers;
+    }
 }
+
+
